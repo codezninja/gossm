@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -102,7 +103,7 @@ func AskRegion(ctx context.Context, cfg aws.Config) (*Region, error) {
 	}
 	if err := survey.AskOne(prompt, &region, survey.WithIcons(func(icons *survey.IconSet) {
 		icons.SelectFocus.Format = "green+hb"
-	}), survey.WithPageSize(20)); err != nil {
+	}), survey.WithPageSize(GetTerminalHeight())); err != nil {
 		return nil, err
 	}
 
@@ -133,7 +134,7 @@ func AskTarget(ctx context.Context, cfg aws.Config, tag string) (*Target, error)
 	selectKey := ""
 	if err := survey.AskOne(prompt, &selectKey, survey.WithIcons(func(icons *survey.IconSet) {
 		icons.SelectFocus.Format = "green+hb"
-	}), survey.WithPageSize(20)); err != nil {
+	}), survey.WithPageSize(GetTerminalHeight())); err != nil {
 		return nil, err
 	}
 
@@ -162,7 +163,7 @@ func AskMultiTarget(ctx context.Context, cfg aws.Config) ([]*Target, error) {
 	}
 
 	var selectKeys []string
-	if err := survey.AskOne(prompt, &selectKeys, survey.WithPageSize(20)); err != nil {
+	if err := survey.AskOne(prompt, &selectKeys, survey.WithPageSize(GetTerminalHeight())); err != nil {
 		return nil, err
 	}
 
@@ -584,4 +585,20 @@ func CallProcess(process string, args ...string) error {
 		return WrapError(err)
 	}
 	return nil
+}
+
+func GetTerminalHeight() int {
+	// Get the terminal height
+	cmd := exec.Command("stty", "size")
+	cmd.Stdin = os.Stdin
+	out, _ := cmd.Output()
+	rows := bytes.Split(out, []byte(" "))[0]
+	terminalHeight := string(rows)
+
+	// Calculate the page size based on terminal height
+	pageSize := 0
+	fmt.Sscanf(terminalHeight, "%d", &pageSize)
+	pageSize -= 2 // Subtracting 2 to account for prompt and selection indicator
+
+	return pageSize
 }
