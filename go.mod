@@ -1,4 +1,4 @@
-module github.com/gjbae1212/gossm
+module github.com/codezninja/gossm
 
 go 1.18
 
